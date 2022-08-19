@@ -15,7 +15,7 @@ const (
 	maxMessageSize = 1024 * 1024
 )
 
-type Client struct {
+type Connection struct {
 	ws   *websocket.Conn
 	send chan []byte // Channel storing outcoming messages
 }
@@ -25,60 +25,55 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: maxMessageSize,
 }
 
-func ServeWs(l *Lobby, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", 405)
-		return
-	}
-
+func ServeWs(l *Lobby, w http.ResponseWriter, r *http.Request, roomId string) {
+	log.Print(roomId)
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		log.Println(err.Error())
 		return
 	}
-
-	c := &Client{
-		send: make(chan []byte, maxMessageSize),
-		ws:   ws,
-	}
-
-	l.Register <- c
-
-	go c.writePump(l)
-	c.readPump(l)
+	c := &Connection{send: make(chan []byte, 256), ws: ws}
+	s := Subscription{c, roomId}
+	l.Register <- s
+	go s.writePump()
+	go s.readPump(l)
 }
 
-func (c *Client) readPump(l *Lobby) {
+func (s Subscription) readPump(l *Lobby) {
+	c := s.Conn
 	defer func() {
-		l.Unregister <- c
+		l.Unregister <- s
 		c.ws.Close()
 	}()
-
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	c.ws.SetPongHandler(func(string) error {
-		c.ws.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
-	})
-
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.ws.ReadMessage()
+		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				log.Printf("error: %v", err)
+			}
 			break
 		}
-
-		l.Broadcast <- string(message)
+		m := Message{msg, s.Room}
+		l.Broadcast <- m
 	}
 }
 
-func (c *Client) writePump(l *Lobby) {
-	ticker := time.NewTicker(pingPeriod)
+// write writes a message with the given message type and payload.
+func (c *Connection) write(mt int, payload []byte) error {
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	return c.ws.WriteMessage(mt, payload)
+}
 
+func (s *Subscription) writePump() {
+	c := s.Conn
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.ws.Close()
 	}()
-
 	for {
 		select {
 		case message, ok := <-c.send:
@@ -95,9 +90,4 @@ func (c *Client) writePump(l *Lobby) {
 			}
 		}
 	}
-}
-
-func (c *Client) write(mt int, message []byte) error {
-	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-	return c.ws.WriteMessage(mt, message)
 }
