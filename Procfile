@@ -1,1 +1,1 @@
-web: bin/daemon
+web: bin/arcanery-go-backend
