@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -25,6 +26,8 @@ func Run(cfg *config.Config) {
 	router.LoadHTMLFiles("index.html")
 
 	v1.NewRouter(router)
+
+	router.Use(cors.Default())
 
 	router.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
 }
