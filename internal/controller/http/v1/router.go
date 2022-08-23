@@ -15,7 +15,6 @@ func NewRouter(router *gin.Engine) {
 	})
 
 	router.GET("ws/:roomId", func(c *gin.Context) {
-		go websocket.L.Run()
 		id := c.Param("roomId")
 		websocket.ServeWs(c.Writer, c.Request, id)
 		log.Println(id)
