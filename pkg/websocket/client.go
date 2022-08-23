@@ -34,10 +34,15 @@ func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
 		log.Fatal(err)
 	}
 
-	c := &Connection{send: make(chan []byte, 256), ws: ws}
-	s := Subscription{r.RemoteAddr, roomId, c}
+	s := CreateSubscription(r.RemoteAddr, roomId, ws)
 
 	s.Subscribe(room)
+}
+
+func CreateSubscription(id, roomId string, ws *websocket.Conn) Subscription {
+	c := &Connection{send: make(chan []byte, 256), ws: ws}
+
+	return Subscription{id, roomId, c}
 }
 
 func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
@@ -71,7 +76,7 @@ func CheckRoomRequest(roomId string) *Room {
 func (s Subscription) Subscribe(room *Room) {
 	room.Register <- s
 
-	s.SetOpts()
+	// s.SetOpts()
 
 	go s.writePump()
 	go s.readPump(room)
@@ -84,7 +89,9 @@ func (s Subscription) readPump(room *Room) {
 		room.Unregister <- s
 		c.ws.Close()
 	}()
-
+	c.ws.SetReadLimit(maxMessageSize)
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
@@ -127,15 +134,6 @@ func (s *Subscription) writePump() {
 
 // write writes a message with the given message type and payload.
 func (c *Connection) write(mt int, payload []byte) error {
-	return c.ws.WriteMessage(mt, payload)
-}
-
-func (s Subscription) SetOpts() {
-	c := s.Conn
-
-	c.ws.SetReadLimit(maxMessageSize)
-	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	return c.ws.WriteMessage(mt, payload)
 }

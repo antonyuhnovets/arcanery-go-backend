@@ -1,0 +1,31 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Give me request and I'll give you a power",
+        "title": "Arcanery",
+        "contact": {},
+        "license": {
+            "name": "MIT"
+        },
+        "version": "0.0.1"
+    },
+    "paths": {
+        "/{roomId}": {
+            "get": {
+                "description": "Load frontend and start chat room",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Backend"
+                ],
+                "summary": "Start room with websocket",
+                "operationId": "RoomBack",
+                "responses": {}
+            }
+        }
+    }
+}

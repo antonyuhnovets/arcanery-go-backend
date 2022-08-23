@@ -1,7 +1,7 @@
 package websocket
 
 type Room struct {
-	id         string
+	Id         string
 	active     bool
 	subs       map[string]Subscription
 	Broadcast  chan Message
@@ -11,7 +11,7 @@ type Room struct {
 
 func CreateRoom(roomId string) *Room {
 	room := Room{
-		id:         roomId,
+		Id:         roomId,
 		active:     true,
 		subs:       make(map[string]Subscription),
 		Broadcast:  make(chan Message),

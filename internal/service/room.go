@@ -1,21 +1,17 @@
 package service
 
-type RoomService interface {
-	Start()
-}
-
 type Room struct {
-	id      string
-	service RoomService
+	c ClientService
+	g GameService
 }
 
-func New(s RoomService, id string) *Room {
-	return &Room{
-		id:      id,
-		service: s,
+type ClientService interface {
+	ConnectToRoom(string)
+}
+
+func GetServices(c ClientService, g GameService) Room {
+	return Room{
+		c: c,
+		g: g,
 	}
-}
-
-func (r *Room) Start() {
-	r.service.Start()
 }
