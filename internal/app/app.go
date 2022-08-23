@@ -16,5 +16,5 @@ func Run(cfg *config.Config) {
 	router.LoadHTMLFiles("index.html")
 	v1.NewRouter(router)
 
-	router.Run("localhost:8000")
+	router.Run("0.0.0.0:80")
 }
