@@ -20,34 +20,71 @@ type Connection struct {
 	send chan []byte // Channel storing outcoming messages
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  maxMessageSize,
-	WriteBufferSize: maxMessageSize,
+type Subscription struct {
+	subId string
+	Room  string
+	Conn  *Connection
 }
 
 func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
-	log.Print(roomId)
-	ws, err := upgrader.Upgrade(w, r, nil)
+	room := CheckRoomRequest(roomId)
+
+	ws, err := UpgradeToWs(w, r)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		log.Fatal(err)
 	}
+
 	c := &Connection{send: make(chan []byte, 256), ws: ws}
-	s := Subscription{c, roomId}
-	L.Register <- s
-	go s.writePump()
-	go s.readPump(L)
+	s := Subscription{r.RemoteAddr, roomId, c}
+
+	s.Subscribe(room)
 }
 
-func (s Subscription) readPump(l *Lobby) {
+func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  maxMessageSize,
+		WriteBufferSize: maxMessageSize,
+	}
+
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
+}
+
+func CheckRoomRequest(roomId string) *Room {
+	var room *Room
+
+	if !H.CheckRoomInHub(roomId) {
+		room = CreateRoom(roomId)
+		go room.Start()
+		H.Register <- room
+	} else {
+		room = H.Rooms[roomId]
+	}
+
+	return room
+}
+
+func (s Subscription) Subscribe(room *Room) {
+	room.Register <- s
+
+	s.SetOpts()
+
+	go s.writePump()
+	go s.readPump(room)
+}
+
+func (s Subscription) readPump(room *Room) {
 	c := s.Conn
+
 	defer func() {
-		l.Unregister <- s
+		room.Unregister <- s
 		c.ws.Close()
 	}()
-	c.ws.SetReadLimit(maxMessageSize)
-	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
 	for {
 		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
@@ -57,23 +94,19 @@ func (s Subscription) readPump(l *Lobby) {
 			break
 		}
 		m := Message{msg, s.Room}
-		l.Broadcast <- m
+		H.Broadcast <- m
 	}
-}
-
-// write writes a message with the given message type and payload.
-func (c *Connection) write(mt int, payload []byte) error {
-	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-	return c.ws.WriteMessage(mt, payload)
 }
 
 func (s *Subscription) writePump() {
 	c := s.Conn
+
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.ws.Close()
 	}()
+
 	for {
 		select {
 		case message, ok := <-c.send:
@@ -90,4 +123,19 @@ func (s *Subscription) writePump() {
 			}
 		}
 	}
+}
+
+// write writes a message with the given message type and payload.
+func (c *Connection) write(mt int, payload []byte) error {
+	return c.ws.WriteMessage(mt, payload)
+}
+
+func (s Subscription) SetOpts() {
+	c := s.Conn
+
+	c.ws.SetReadLimit(maxMessageSize)
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 }
