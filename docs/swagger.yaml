@@ -1,0 +1,21 @@
+info:
+  contact: {}
+  description: Give me request and I'll give you a power
+  license:
+    name: MIT
+  title: Arcanery
+  version: 0.0.1
+paths:
+  /{roomId}:
+    get:
+      consumes:
+      - application/json
+      description: Load frontend and start chat room
+      operationId: RoomBack
+      produces:
+      - application/json
+      responses: {}
+      summary: Start room with websocket
+      tags:
+      - Backend
+swagger: "2.0"

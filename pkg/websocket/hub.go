@@ -40,13 +40,13 @@ func (h *Hub) Run() {
 }
 
 func (h *Hub) AddRoom(room *Room) {
-	h.Rooms[room.id] = room
+	h.Rooms[room.Id] = room
 	go room.Start()
 }
 
 func (h *Hub) RemoveRoom(room *Room) {
 	room.Shutdown()
-	delete(h.Rooms, room.id)
+	delete(h.Rooms, room.Id)
 }
 
 func (h *Hub) RedirectMsg(msg Message) {
