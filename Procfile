@@ -1,1 +1,1 @@
-ws: bin/daemon
+web: bin/daemon
