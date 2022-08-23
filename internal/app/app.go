@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -9,7 +11,6 @@ import (
 	_ "github.com/hetonei/arcanery-go-backend/docs"
 	v1 "github.com/hetonei/arcanery-go-backend/internal/controller/http/v1"
 	"github.com/hetonei/arcanery-go-backend/pkg/websocket"
-	// "github.com/hetonei/arcanery-go-backend/pkg/httpserver"
 )
 
 // @title         Arcanery
@@ -25,5 +26,5 @@ func Run(cfg *config.Config) {
 
 	v1.NewRouter(router)
 
-	router.Run("0.0.0.0:8080")
+	router.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
 }
