@@ -1,1 +1,1 @@
-web: bin/arcanery-backend
+web: bin/daemon
