@@ -24,14 +24,11 @@ type Lobby struct {
 	Unregister chan Subscription
 }
 
-func NewLobby() *Lobby {
-	l := &Lobby{
-		Broadcast:  make(chan Message),
-		Register:   make(chan Subscription),
-		Unregister: make(chan Subscription),
-		Rooms:      make(map[string]map[*Connection]bool),
-	}
-	return l
+var L = &Lobby{
+	Broadcast:  make(chan Message),
+	Register:   make(chan Subscription),
+	Unregister: make(chan Subscription),
+	Rooms:      make(map[string]map[*Connection]bool),
 }
 
 func (l *Lobby) Run() {

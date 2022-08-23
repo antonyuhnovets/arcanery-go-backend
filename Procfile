@@ -1,1 +1,1 @@
-ws: bin/arcanery
+ws: bin/daemon

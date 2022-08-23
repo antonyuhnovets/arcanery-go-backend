@@ -9,9 +9,9 @@ import (
 )
 
 func Run(cfg *config.Config) {
-	handler := gin.New()
-	handler.LoadHTMLFiles("index.html")
-	v1.NewRouter(handler)
+	router := gin.New()
+	router.LoadHTMLFiles("index.html")
+	v1.NewRouter(router)
 
-	handler.Run("localhost:8000")
+	router.Run("localhost:8000")
 }

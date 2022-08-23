@@ -25,7 +25,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: maxMessageSize,
 }
 
-func ServeWs(l *Lobby, w http.ResponseWriter, r *http.Request, roomId string) {
+func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
 	log.Print(roomId)
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -34,9 +34,9 @@ func ServeWs(l *Lobby, w http.ResponseWriter, r *http.Request, roomId string) {
 	}
 	c := &Connection{send: make(chan []byte, 256), ws: ws}
 	s := Subscription{c, roomId}
-	l.Register <- s
+	L.Register <- s
 	go s.writePump()
-	go s.readPump(l)
+	go s.readPump(L)
 }
 
 func (s Subscription) readPump(l *Lobby) {
