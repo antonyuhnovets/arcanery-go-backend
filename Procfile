@@ -1,1 +1,1 @@
-web: bin/arcanery-go-backend
+web: bin/arcanery-backend
