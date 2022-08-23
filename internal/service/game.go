@@ -1,4 +1,4 @@
-package lobby
+package service
 
 import "github.com/hetonei/arcanery-go-backend/internal/domain/models"
 
@@ -19,14 +19,4 @@ type Game struct {
 	rounds    []Round
 	playerOne Player
 	playerTwo Player
-}
-
-type RoomConnection interface {
-	Connect()
-	Disconnect()
-}
-
-type Room struct {
-	game       Game
-	connection RoomConnection
 }

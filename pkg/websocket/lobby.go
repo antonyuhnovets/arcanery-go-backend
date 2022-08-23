@@ -1,55 +1,70 @@
 package websocket
 
+type Message struct {
+	Data []byte
+	Room string
+}
+
+type Subscription struct {
+	Conn *Connection
+	Room string
+}
+
 type Lobby struct {
-	// Registered clients
-	Clients map[*Client]bool
+	// Registered connections.
+	Rooms map[string]map[*Connection]bool
 
-	// Inbound messages
-	Broadcast chan string
+	// Inbound messages from the connections.
+	Broadcast chan Message
 
-	// Register requests
-	Register chan *Client
+	// Register requests from the connections.
+	Register chan Subscription
 
-	// Unregister requests
-	Unregister chan *Client
+	// Unregister requests from connections.
+	Unregister chan Subscription
+}
 
-	Content string
+var L = &Lobby{
+	Broadcast:  make(chan Message),
+	Register:   make(chan Subscription),
+	Unregister: make(chan Subscription),
+	Rooms:      make(map[string]map[*Connection]bool),
 }
 
 func (l *Lobby) Run() {
 	for {
 		select {
-		case c := <-l.Register:
-			l.Clients[c] = true
-			c.send <- []byte(l.Content)
-			break
-
-		case c := <-l.Unregister:
-			_, ok := l.Clients[c]
-			if ok {
-				delete(l.Clients, c)
-				close(c.send)
+		case s := <-l.Register:
+			connections := l.Rooms[s.Room]
+			if connections == nil {
+				connections = make(map[*Connection]bool)
+				l.Rooms[s.Room] = connections
 			}
-			break
-
+			l.Rooms[s.Room][s.Conn] = true
+		case s := <-l.Unregister:
+			connections := l.Rooms[s.Room]
+			if connections != nil {
+				if _, ok := connections[s.Conn]; ok {
+					delete(connections, s.Conn)
+					close(s.Conn.send)
+					if len(connections) == 0 {
+						delete(l.Rooms, s.Room)
+					}
+				}
+			}
 		case m := <-l.Broadcast:
-			l.Content = m
-			l.broadcastMessage()
-			break
-		}
-	}
-}
-
-func (l *Lobby) broadcastMessage() {
-	for c := range l.Clients {
-		select {
-		case c.send <- []byte(l.Content):
-			break
-
-		// We can't reach the client
-		default:
-			close(c.send)
-			delete(l.Clients, c)
+			connections := l.Rooms[m.Room]
+			for c := range connections {
+				select {
+				case c.send <- m.Data:
+				default:
+					close(c.send)
+					delete(connections, c)
+					if len(connections) == 0 {
+						delete(l.Rooms, m.Room)
+					}
+				}
+			}
 		}
 	}
 }
