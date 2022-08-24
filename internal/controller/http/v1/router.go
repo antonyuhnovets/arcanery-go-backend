@@ -7,7 +7,11 @@ import (
 func NewRouter(router *gin.Engine) {
 	h := router.Group("v1/room")
 
-	h.GET(":roomId", LoadFrontend)
+	h.GET("/new", CreateRoom)
 
-	h.GET("ws/:roomId", StartWebsocket)
+	h.GET("/rm/:roomId", DeleteRoomById)
+
+	h.GET(":roomId", ConnectById)
+
+	h.GET("ws/:roomId", ConnectWS)
 }

@@ -1,5 +1,7 @@
 package websocket
 
+import "log"
+
 type Message struct {
 	Data []byte
 	Room string
@@ -30,31 +32,41 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case r := <-h.Register:
+			log.Println("Hub is processing register")
 			h.AddRoom(r)
 		case r := <-h.Unregister:
+			log.Println("Hub is processing unregister")
 			h.RemoveRoom(r)
 		case m := <-h.Broadcast:
-			h.RedirectMsg(m)
+			log.Println("Hub is processing msg")
+			h.Rooms[m.Room].Broadcast <- m
+			log.Println("Msg redirected")
 		}
 	}
 }
 
 func (h *Hub) AddRoom(room *Room) {
 	h.Rooms[room.Id] = room
+	log.Printf("%s added in hub", room.Id)
 	go room.Start()
+	log.Println("The room started")
 }
 
 func (h *Hub) RemoveRoom(room *Room) {
 	room.Shutdown()
+	log.Println("Shutdown correct, deleting from hub")
 	delete(h.Rooms, room.Id)
+	log.Printf("room has been removed from hub")
 }
 
 func (h *Hub) RedirectMsg(msg Message) {
-	h.Rooms[msg.Room].ProcessMsg(msg)
+	h.Rooms[msg.Room].Broadcast <- msg
+	log.Println("Msg redirectes")
 }
 
 func (h *Hub) CheckRoomInHub(roomId string) bool {
 	if _, ok := h.Rooms[roomId]; ok {
+		log.Println(true)
 		return true
 	}
 	return false

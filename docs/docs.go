@@ -19,9 +19,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/{roomId}": {
+        "/new": {
             "get": {
-                "description": "Load frontend and start chat room",
+                "description": "Start chat room",
                 "consumes": [
                     "application/json"
                 ],
@@ -31,8 +31,42 @@ const docTemplate = `{
                 "tags": [
                     "Backend"
                 ],
-                "summary": "Start room with websocket",
+                "summary": "Create room",
                 "operationId": "RoomBack",
+                "responses": {}
+            }
+        },
+        "/rm/{roomId}": {
+            "get": {
+                "description": "Remove room by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "del"
+                ],
+                "summary": "Delete Room",
+                "operationId": "rmRoom",
+                "responses": {}
+            }
+        },
+        "/{roomId}": {
+            "get": {
+                "description": "Load frontend and start chat room",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Frontend"
+                ],
+                "summary": "Load frontend with websocket",
+                "operationId": "RoomFront",
                 "responses": {}
             }
         }
