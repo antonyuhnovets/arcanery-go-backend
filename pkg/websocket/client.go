@@ -21,7 +21,7 @@ type Connection struct {
 }
 
 type Subscription struct {
-	subId string
+	SubId string
 	Room  string
 	Conn  *Connection
 }
@@ -40,7 +40,10 @@ func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
 }
 
 func CreateSubscription(id, roomId string, ws *websocket.Conn) Subscription {
-	c := &Connection{send: make(chan []byte, 256), ws: ws}
+	c := &Connection{
+		send: make(chan []byte, 256),
+		ws:   ws,
+	}
 
 	return Subscription{id, roomId, c}
 }
@@ -60,25 +63,18 @@ func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error
 }
 
 func CheckRoomRequest(roomId string) *Room {
-	var room *Room
-
 	if !H.CheckRoomInHub(roomId) {
-		room = CreateRoom(roomId)
-		go room.Start()
-		H.Register <- room
-	} else {
-		room = H.Rooms[roomId]
+		log.Printf("%s room not in hub", roomId)
+		return nil
 	}
-
-	return room
+	log.Printf("%s room in hub", roomId)
+	return H.Rooms[roomId]
 }
 
 func (s Subscription) Subscribe(room *Room) {
 	room.Register <- s
 
-	// s.SetOpts()
-
-	go s.writePump()
+	go s.writePump(room)
 	go s.readPump(room)
 }
 
@@ -86,12 +82,12 @@ func (s Subscription) readPump(room *Room) {
 	c := s.Conn
 
 	defer func() {
-		room.Unregister <- s
 		c.ws.Close()
 	}()
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
 	for {
 		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
@@ -100,12 +96,11 @@ func (s Subscription) readPump(room *Room) {
 			}
 			break
 		}
-		m := Message{msg, s.Room}
-		H.Broadcast <- m
+		H.Broadcast <- Message{msg, room.Id}
 	}
 }
 
-func (s *Subscription) writePump() {
+func (s Subscription) writePump(room *Room) {
 	c := s.Conn
 
 	ticker := time.NewTicker(pingPeriod)
@@ -135,5 +130,6 @@ func (s *Subscription) writePump() {
 // write writes a message with the given message type and payload.
 func (c *Connection) write(mt int, payload []byte) error {
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+
 	return c.ws.WriteMessage(mt, payload)
 }

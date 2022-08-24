@@ -11,11 +11,35 @@ paths:
       consumes:
       - application/json
       description: Load frontend and start chat room
+      operationId: RoomFront
+      produces:
+      - text/html
+      responses: {}
+      summary: Load frontend with websocket
+      tags:
+      - Frontend
+  /new:
+    get:
+      consumes:
+      - application/json
+      description: Start chat room
       operationId: RoomBack
       produces:
       - application/json
       responses: {}
-      summary: Start room with websocket
+      summary: Create room
       tags:
       - Backend
+  /rm/{roomId}:
+    get:
+      consumes:
+      - application/json
+      description: Remove room by id
+      operationId: rmRoom
+      produces:
+      - text/html
+      responses: {}
+      summary: Delete Room
+      tags:
+      - del
 swagger: "2.0"

@@ -1,19 +1,8 @@
 package service
 
-type RoomService struct {
-	c ClientService
-	g GameService
-}
-
 type ClientService interface {
-	ConnectToRoom(string)
 	CreateRoom(string)
+	DeleteRoom(string)
+	ConnectToRoom(string)
 	Disconnect(string)
-}
-
-func GetServices(c ClientService, g GameService) RoomService {
-	return RoomService{
-		c: c,
-		g: g,
-	}
 }
