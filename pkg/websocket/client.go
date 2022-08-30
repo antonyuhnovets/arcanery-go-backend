@@ -54,6 +54,8 @@ func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error
 		WriteBufferSize: maxMessageSize,
 	}
 
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
