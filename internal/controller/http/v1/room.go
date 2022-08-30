@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	rs "github.com/hetonei/arcanery-go-backend/internal/service/room_service"
@@ -21,7 +19,7 @@ func CreateRoom(c *gin.Context) {
 	id := uuid.GenerateId()
 
 	srv.CreateRoom(id)
-	c.JSON(200, fmt.Sprintf("Room %s created", id))
+	c.JSON(200, id)
 }
 
 // @Summary     Load frontend with websocket
