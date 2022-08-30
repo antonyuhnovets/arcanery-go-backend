@@ -29,8 +29,8 @@ func CreateRoom(c *gin.Context) {
 // @Accept      json
 // @Produce     html
 // @Router      /{roomId} [get]
-// func ConnectById(c *gin.Context) {
-// }
+func ConnectById(c *gin.Context) {
+}
 
 func ConnectWS(c *gin.Context) {
 	id := c.Param("roomId")
