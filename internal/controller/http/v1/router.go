@@ -11,7 +11,7 @@ func NewRouter(router *gin.Engine) {
 
 	h.GET("/rm/:roomId", DeleteRoomById)
 
-	h.GET(":roomId", ConnectById)
+	// h.GET(":roomId", ConnectById)
 
 	h.GET("ws/:roomId", ConnectWS)
 }
