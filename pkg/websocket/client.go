@@ -31,7 +31,7 @@ func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
 
 	ws, err := UpgradeToWs(w, r)
 	if err != nil {
-		log.Fatal(err)
+		log.Panicln(err)
 	}
 
 	s := CreateSubscription(r.RemoteAddr, roomId, ws)
@@ -96,7 +96,7 @@ func (s Subscription) readPump(room *Room) {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("error: %v", err)
 			}
-			// break
+			break
 		}
 		H.Broadcast <- Message{msg, room.Id}
 	}
