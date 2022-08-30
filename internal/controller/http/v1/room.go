@@ -32,7 +32,7 @@ func CreateRoom(c *gin.Context) {
 // @Produce     html
 // @Router      /{roomId} [get]
 func ConnectById(c *gin.Context) {
-	c.JSON(200, "index.html")
+	c.HTML(200, "index.html", nil)
 }
 
 func ConnectWS(c *gin.Context) {
