@@ -13,8 +13,6 @@ import (
 	v1 "github.com/hetonei/arcanery-go-backend/internal/controller/http/v1"
 	"github.com/hetonei/arcanery-go-backend/internal/middleware"
 	"github.com/hetonei/arcanery-go-backend/pkg/websocket"
-	// v2 "github.com/hetonei/arcanery-go-backend/internal/controller/http/v2"
-	// "github.com/hetonei/arcanery-go-backend/pkg/socketio"
 )
 
 // @title         Arcanery
@@ -25,18 +23,6 @@ func Run(cfg *config.Config) {
 	router := gin.New()
 
 	go websocket.H.Run()
-
-	// v2
-	// sio := socketio.NewServer()
-	// v2.NewRouter(router, sio.Server)
-	// sio.ConnectClient("1")
-	// sio.ListenMsgs()
-	// sio.DisconnectClient()
-	// go sio.Run()
-	// defer sio.Stop()
-	// router.GET("/socket.io/*any", gin.WrapH(sio.Server))
-	// router.POST("/socket.io/*any", gin.WrapH(sio.Server))
-	// router.StaticFS("/public", http.Dir("./asset"))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
