@@ -94,7 +94,7 @@ func (s Subscription) readPump(room *Room) {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("error: %v", err)
 			}
-			break
+			// break
 		}
 		H.Broadcast <- Message{msg, room.Id}
 	}
