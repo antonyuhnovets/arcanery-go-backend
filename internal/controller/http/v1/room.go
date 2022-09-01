@@ -3,7 +3,7 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 
-	rs "github.com/hetonei/arcanery-go-backend/internal/service/room_service"
+	"github.com/hetonei/arcanery-go-backend/internal/service"
 	"github.com/hetonei/arcanery-go-backend/pkg/uuid"
 )
 
@@ -15,7 +15,7 @@ import (
 // @Produce     json
 // @Router      /new [get]
 func CreateRoom(c *gin.Context) {
-	srv := rs.RegisterClient(c.Writer, c.Request)
+	srv := service.RegisterRequest(c.Writer, c.Request)
 	id := uuid.GenerateId()
 
 	srv.CreateRoom(id)
@@ -34,7 +34,7 @@ func ConnectById(c *gin.Context) {
 
 func ConnectWS(c *gin.Context) {
 	id := c.Param("roomId")
-	srv := rs.RegisterClient(c.Writer, c.Request)
+	srv := service.RegisterRequest(c.Writer, c.Request)
 
 	srv.ConnectToRoom(id)
 }
@@ -48,7 +48,7 @@ func ConnectWS(c *gin.Context) {
 // @Router      /rm/{roomId} [get]
 func DeleteRoomById(c *gin.Context) {
 	id := c.Param("roomId")
-	srv := rs.RegisterClient(c.Writer, c.Request)
+	srv := service.RegisterRequest(c.Writer, c.Request)
 
 	srv.DeleteRoom(id)
 }

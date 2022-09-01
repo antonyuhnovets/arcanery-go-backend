@@ -3,8 +3,9 @@ package websocket
 import "log"
 
 type Message struct {
-	Data []byte
-	Room string
+	Room  string      `json:"rid"`
+	Event string      `json:"type"`
+	Data  interface{} `json:"data"`
 }
 
 type Hub struct {
@@ -39,8 +40,7 @@ func (h *Hub) Run() {
 			h.RemoveRoom(r)
 		case m := <-h.Broadcast:
 			log.Println("Hub is processing msg")
-			h.Rooms[m.Room].Broadcast <- m
-			log.Println("Msg redirected")
+			h.RedirectMsg(m)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func (h *Hub) RemoveRoom(room *Room) {
 
 func (h *Hub) RedirectMsg(msg Message) {
 	h.Rooms[msg.Room].Broadcast <- msg
-	log.Println("Msg redirectes")
+	log.Println("Msg redirected")
 }
 
 func (h *Hub) CheckRoomInHub(roomId string) bool {

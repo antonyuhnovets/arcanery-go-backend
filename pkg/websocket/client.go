@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -17,7 +18,7 @@ const (
 
 type Connection struct {
 	ws   *websocket.Conn
-	send chan []byte // Channel storing outcoming messages
+	send chan Message // Channel storing outcoming messages
 }
 
 type Subscription struct {
@@ -41,7 +42,7 @@ func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
 
 func CreateSubscription(id, roomId string, ws *websocket.Conn) Subscription {
 	c := &Connection{
-		send: make(chan []byte, 256),
+		send: make(chan Message),
 		ws:   ws,
 	}
 
@@ -98,7 +99,14 @@ func (s Subscription) readPump(room *Room) {
 			}
 			break
 		}
-		H.Broadcast <- Message{msg, room.Id}
+
+		incMsg := &Message{}
+		err = json.Unmarshal(msg, incMsg)
+		incMsg.Room = room.Id
+		if err != nil {
+			log.Println(err)
+		}
+		H.Broadcast <- *incMsg
 	}
 }
 
@@ -118,7 +126,14 @@ func (s Subscription) writePump(room *Room) {
 				c.write(websocket.CloseMessage, []byte{})
 				return
 			}
-			if err := c.write(websocket.TextMessage, message); err != nil {
+			// if err := c.writeJson(message); err != nil {
+			// 	return
+			// }
+			bMsg, err := json.Marshal(message)
+			if err != nil {
+				log.Println(err)
+			}
+			if err := c.write(websocket.TextMessage, bMsg); err != nil {
 				return
 			}
 		case <-ticker.C:
@@ -135,3 +150,9 @@ func (c *Connection) write(mt int, payload []byte) error {
 
 	return c.ws.WriteMessage(mt, payload)
 }
+
+// func (c *Connection) writeJson(msg Message) error {
+// 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+
+// 	return c.ws.WriteJSON(msg)
+// }

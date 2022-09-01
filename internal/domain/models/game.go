@@ -1,9 +1,9 @@
 package models
 
 type Card struct {
-	id         int
-	name       string
-	modifierId int
+	Id         int
+	Name       string
+	ModifierId int
 }
 
 type Class struct {

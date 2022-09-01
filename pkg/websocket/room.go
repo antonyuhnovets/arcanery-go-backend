@@ -1,24 +1,29 @@
 package websocket
 
-import "log"
+import (
+	"log"
+	// "github.com/gorilla/websocket"
+)
 
 type Room struct {
-	Id         string
-	Active     chan bool
-	Subs       map[string]Subscription
-	Broadcast  chan Message
-	Register   chan Subscription
-	Unregister chan Subscription
+	Id           string
+	Active       chan bool
+	Subs         map[string]Subscription
+	Broadcast    chan Message
+	Register     chan Subscription
+	Unregister   chan Subscription
+	EventHandler func(Message) Message
 }
 
-func CreateRoom(roomId string) *Room {
+func CreateRoom(roomId string, handler func(Message) Message) *Room {
 	room := Room{
-		Id:         roomId,
-		Subs:       make(map[string]Subscription),
-		Active:     make(chan bool),
-		Broadcast:  make(chan Message),
-		Register:   make(chan Subscription),
-		Unregister: make(chan Subscription),
+		Id:           roomId,
+		Subs:         make(map[string]Subscription),
+		Active:       make(chan bool),
+		Broadcast:    make(chan Message),
+		Register:     make(chan Subscription),
+		Unregister:   make(chan Subscription),
+		EventHandler: handler,
 	}
 	return &room
 }
@@ -34,7 +39,8 @@ func (r *Room) Start() {
 			r.RemoveSubscriber(s)
 		case m := <-r.Broadcast:
 			log.Println("Room is processing msg")
-			r.ProcessMsg(m)
+			msg := r.EventHandler(m)
+			r.ProcessMsg(msg)
 		case trigger := <-r.Active:
 			if !trigger {
 				log.Println("Trigger down")
@@ -79,7 +85,7 @@ func (r *Room) RemoveAllSubscribers() {
 
 func (r *Room) ProcessMsg(msg Message) {
 	for _, sub := range r.Subs {
-		sub.Conn.send <- msg.Data
+		sub.Conn.send <- msg
 		log.Println("Msg was redirected to connections")
 	}
 }
