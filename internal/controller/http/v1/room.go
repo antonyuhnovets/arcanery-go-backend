@@ -13,7 +13,7 @@ import (
 // @Tags  	    Backend
 // @Accept      json
 // @Produce     json
-// @Router      /new [get]
+// @Router      /new [post]
 func CreateRoom(c *gin.Context) {
 	srv := service.RegisterRequest(c.Writer, c.Request)
 	id := uuid.GenerateId()
@@ -45,7 +45,7 @@ func ConnectWS(c *gin.Context) {
 // @Tags  	    del
 // @Accept      json
 // @Produce     html
-// @Router      /rm/{roomId} [get]
+// @Router      /{roomId} [delete]
 func DeleteRoomById(c *gin.Context) {
 	id := c.Param("roomId")
 	srv := service.RegisterRequest(c.Writer, c.Request)

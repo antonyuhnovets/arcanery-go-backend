@@ -7,11 +7,11 @@ import (
 func NewRouter(router *gin.Engine) {
 	h := router.Group("v1/room")
 
-	h.GET("/new", CreateRoom)
-
-	h.GET("/rm/:roomId", DeleteRoomById)
+	h.POST("/new", CreateRoom)
 
 	h.GET("/:roomId", ConnectById)
 
 	h.GET("ws/:roomId", ConnectWS)
+
+	h.DELETE("/:roomId", DeleteRoomById)
 }
