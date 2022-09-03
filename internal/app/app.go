@@ -12,7 +12,7 @@ import (
 	_ "github.com/hetonei/arcanery-go-backend/docs"
 	v1 "github.com/hetonei/arcanery-go-backend/internal/controller/http/v1"
 	"github.com/hetonei/arcanery-go-backend/internal/middleware"
-	"github.com/hetonei/arcanery-go-backend/pkg/websocket"
+	"github.com/hetonei/arcanery-go-backend/internal/service/lobby"
 )
 
 // @title         Arcanery
@@ -22,7 +22,7 @@ import (
 func Run(cfg *config.Config) {
 	router := gin.New()
 
-	go websocket.H.Run()
+	go lobby.H.Run()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

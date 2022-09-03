@@ -1,4 +1,4 @@
-package v1
+package http
 
 type RoomResponse struct {
 	Message string `json:"message"`

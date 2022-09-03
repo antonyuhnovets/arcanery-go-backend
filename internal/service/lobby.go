@@ -30,6 +30,15 @@ type GameService interface {
 	EndGame()
 }
 
+type Connection interface {
+	WritePump()
+	SendMsg(interface{})
+	ReadPump(func([]byte))
+	Close()
+}
+
+type GetConnection func() Connection
+
 func CreateLobby(r Lobby) {
 	return
 }

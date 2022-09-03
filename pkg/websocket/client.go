@@ -18,35 +18,15 @@ const (
 
 type Connection struct {
 	ws   *websocket.Conn
-	send chan Message // Channel storing outcoming messages
+	send chan interface{} // Channel storing outcoming messages
 }
 
-type Subscription struct {
-	SubId string
-	Room  string
-	Conn  *Connection
-}
-
-func ServeWs(w http.ResponseWriter, r *http.Request, roomId string) {
-	room := CheckRoomRequest(roomId)
-
-	ws, err := UpgradeToWs(w, r)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	s := CreateSubscription(r.RemoteAddr, roomId, ws)
-
-	s.Subscribe(room)
-}
-
-func CreateSubscription(id, roomId string, ws *websocket.Conn) Subscription {
-	c := &Connection{
-		send: make(chan Message),
+func MakeConnection(ws *websocket.Conn) Connection {
+	c := Connection{
+		send: make(chan interface{}),
 		ws:   ws,
 	}
-
-	return Subscription{id, roomId, c}
+	return c
 }
 
 func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
@@ -65,28 +45,11 @@ func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error
 	return ws, nil
 }
 
-func CheckRoomRequest(roomId string) *Room {
-	if !H.CheckRoomInHub(roomId) {
-		log.Printf("%s room not in hub", roomId)
-		return nil
-	}
-	log.Printf("%s room in hub", roomId)
-	return H.Rooms[roomId]
+func (c Connection) SendMsg(msg interface{}) {
+	c.send <- msg
 }
 
-func (s Subscription) Subscribe(room *Room) {
-	room.Register <- s
-
-	go s.writePump(room)
-	go s.readPump(room)
-}
-
-func (s Subscription) readPump(room *Room) {
-	c := s.Conn
-
-	defer func() {
-		c.ws.Close()
-	}()
+func (c Connection) ReadPump(msgHandler func([]byte)) {
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -99,24 +62,14 @@ func (s Subscription) readPump(room *Room) {
 			}
 			break
 		}
-
-		incMsg := &Message{}
-		err = json.Unmarshal(msg, incMsg)
-		incMsg.Room = room.Id
-		if err != nil {
-			log.Println(err)
-		}
-		H.Broadcast <- *incMsg
+		msgHandler(msg)
 	}
 }
 
-func (s Subscription) writePump(room *Room) {
-	c := s.Conn
-
+func (c Connection) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.ws.Close()
 	}()
 
 	for {
@@ -142,6 +95,11 @@ func (s Subscription) writePump(room *Room) {
 			}
 		}
 	}
+}
+
+func (c Connection) Close() {
+	close(c.send)
+	c.ws.Close()
 }
 
 // write writes a message with the given message type and payload.

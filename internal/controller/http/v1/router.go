@@ -1,4 +1,4 @@
-package v1
+package http
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,7 +7,7 @@ import (
 func NewRouter(router *gin.Engine) {
 	h := router.Group("v1/room")
 
-	h.POST("/new", CreateRoom)
+	h.GET("/new", CreateRoom)
 
 	h.GET("/:roomId", ConnectById)
 

@@ -1,4 +1,4 @@
-package websocket
+package lobby
 
 import "log"
 
@@ -9,16 +9,9 @@ type Message struct {
 }
 
 type Hub struct {
-	// Registered connections.
-	Rooms map[string]*Room
-
-	// Inbound messages from the connections.
-	Broadcast chan Message
-
-	// Register requests from the connections.
-	Register chan *Room
-
-	// Unregister requests from connections.
+	Rooms      map[string]*Room
+	Broadcast  chan Message
+	Register   chan *Room
 	Unregister chan *Room
 }
 
@@ -70,4 +63,13 @@ func (h *Hub) CheckRoomInHub(roomId string) bool {
 		return true
 	}
 	return false
+}
+
+func CheckRoomRequest(roomId string) *Room {
+	if !H.CheckRoomInHub(roomId) {
+		log.Printf("%s room not in hub", roomId)
+		return nil
+	}
+	log.Printf("%s room in hub", roomId)
+	return H.Rooms[roomId]
 }
