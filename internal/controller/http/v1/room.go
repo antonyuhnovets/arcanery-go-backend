@@ -3,10 +3,19 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 
-	// "github.com/hetonei/arcanery-go-backend/internal/service"
-	ws "github.com/hetonei/arcanery-go-backend/internal/controller/ws/v1"
+	"github.com/hetonei/arcanery-go-backend/internal/service"
+	"github.com/hetonei/arcanery-go-backend/internal/service/lobby/ws"
 	"github.com/hetonei/arcanery-go-backend/pkg/uuid"
 )
+
+func GetServices(c *gin.Context) *service.Services {
+	s := service.Services{
+		Ctx: c,
+	}
+	srv := ws.RegisterRequest(c.Writer, c.Request)
+	s.SetRoomService(srv)
+	return &s
+}
 
 // @Summary     Create room
 // @Description Start chat room
@@ -16,10 +25,10 @@ import (
 // @Produce     json
 // @Router      /new [post]
 func CreateRoom(c *gin.Context) {
-	srv := ws.RegisterRequest(c.Writer, c.Request)
+	srv := GetServices(c)
 	id := uuid.GenerateId()
 
-	srv.CreateRoom(id)
+	srv.Room.CreateRoom(id)
 	c.JSON(200, id)
 }
 
@@ -35,9 +44,9 @@ func ConnectById(c *gin.Context) {
 
 func ConnectWS(c *gin.Context) {
 	id := c.Param("roomId")
-	srv := ws.RegisterRequest(c.Writer, c.Request)
+	srv := GetServices(c)
 
-	srv.ConnectToRoom(id)
+	srv.Room.ConnectToRoom(id)
 }
 
 // @Summary     Delete Room
@@ -49,7 +58,7 @@ func ConnectWS(c *gin.Context) {
 // @Router      /{roomId} [delete]
 func DeleteRoomById(c *gin.Context) {
 	id := c.Param("roomId")
-	srv := ws.RegisterRequest(c.Writer, c.Request)
+	srv := GetServices(c)
 
-	srv.DeleteRoom(id)
+	srv.Room.DeleteRoom(id)
 }

@@ -17,6 +17,7 @@ const (
 )
 
 type Connection struct {
+	Id   string
 	ws   *websocket.Conn
 	send chan interface{} // Channel storing outcoming messages
 }
@@ -100,6 +101,14 @@ func (c Connection) WritePump() {
 func (c Connection) Close() {
 	close(c.send)
 	c.ws.Close()
+}
+
+func (c Connection) SetConnectionId(id string) {
+	c.Id = id
+}
+
+func (c Connection) GetConnectionId() string {
+	return c.Id
 }
 
 // write writes a message with the given message type and payload.

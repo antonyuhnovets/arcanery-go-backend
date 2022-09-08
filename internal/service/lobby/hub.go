@@ -31,11 +31,22 @@ func (h *Hub) Run() {
 		case r := <-h.Unregister:
 			log.Println("Hub is processing unregister")
 			h.RemoveRoom(r)
-		case m := <-h.Broadcast:
+		case msg := <-h.Broadcast:
+			h.HandleMsg(msg)
+			h.RedirectMsg(msg)
 			log.Println("Hub is processing msg")
-			h.RedirectMsg(m)
+			// case e := <-h.Events:
+
 		}
 	}
+}
+
+func RegisterRoom(r *Room) {
+	H.Register <- r
+}
+
+func Unregister(r *Room) {
+	H.Unregister <- r
 }
 
 func (h *Hub) AddRoom(room *Room) {

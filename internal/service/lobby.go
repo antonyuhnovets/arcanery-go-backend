@@ -1,19 +1,44 @@
 package service
 
-// import(
-// 	"github.com/hetonei/arcanery-go-backend/internal/domain/models"
-// )
+import "context"
 
 type Lobby struct {
-	room RoomService
-	game GameService
+	id string
+	// users map[string]User
+}
+
+type Services struct {
+	Ctx  context.Context
+	Room RoomService
 }
 
 type RoomService interface {
 	CreateRoom(string)
-	DeleteRoom(string)
 	ConnectToRoom(string)
 	Disconnect(string)
+	DeleteRoom(string)
+}
+
+func (s *Services) SetRoomService(srv RoomService) {
+	s.Room = srv
+}
+
+func NewLobby(creator Services, roomId string) *Lobby {
+	creator.Room.CreateRoom(roomId)
+	creator.Room.ConnectToRoom(roomId)
+	return &Lobby{
+		id: roomId,
+		// users: map[string]Services{creator.Id: creator},
+	}
+}
+
+type Connection interface {
+	WritePump()
+	SendMsg(interface{})
+	ReadPump(func([]byte))
+	SetConnectionId(string)
+	GetConnectionId() string
+	Close()
 }
 
 type PlayerService interface {
@@ -28,17 +53,4 @@ type GameService interface {
 	EndTurn()
 	EndRound()
 	EndGame()
-}
-
-type Connection interface {
-	WritePump()
-	SendMsg(interface{})
-	ReadPump(func([]byte))
-	Close()
-}
-
-type GetConnection func() Connection
-
-func CreateLobby(r Lobby) {
-	return
 }

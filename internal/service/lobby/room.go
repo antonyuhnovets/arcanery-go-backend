@@ -20,7 +20,6 @@ func CreateSubscription(id, roomId string, conn service.Connection) Subscription
 func (s Subscription) HandleMsg(msg []byte) {
 	incMsg := &Message{}
 	err := json.Unmarshal(msg, incMsg)
-
 	incMsg.Room = s.Room
 	if err != nil {
 		log.Println(err)
@@ -29,32 +28,39 @@ func (s Subscription) HandleMsg(msg []byte) {
 	H.Broadcast <- *incMsg
 }
 
-func (s Subscription) Subscribe(room *Room) {
+func (s Subscription) Subscribe(id string, room *Room) {
 	room.Register <- s
+}
+
+func (s Subscription) ListenWS(room *Room) {
 
 	go s.Conn.WritePump()
 	go s.Conn.ReadPump(s.HandleMsg)
 }
 
-type Room struct {
-	Id           string
-	Active       chan bool
-	Subs         map[string]Subscription
-	Broadcast    chan Message
-	Register     chan Subscription
-	Unregister   chan Subscription
-	EventHandler func(Message) Message
+func (s Subscription) Unsubscribe(room *Room) {
+	room.Unregister <- s
+
+	s.Conn.Close()
 }
 
-func CreateRoom(roomId string, handler func(Message) Message) *Room {
+type Room struct {
+	Id         string
+	Active     chan bool
+	Subs       map[string]Subscription
+	Broadcast  chan Message
+	Register   chan Subscription
+	Unregister chan Subscription
+}
+
+func CreateRoom(roomId string) *Room {
 	room := Room{
-		Id:           roomId,
-		Subs:         make(map[string]Subscription),
-		Active:       make(chan bool),
-		Broadcast:    make(chan Message),
-		Register:     make(chan Subscription),
-		Unregister:   make(chan Subscription),
-		EventHandler: handler,
+		Id:         roomId,
+		Subs:       make(map[string]Subscription),
+		Active:     make(chan bool),
+		Broadcast:  make(chan Message),
+		Register:   make(chan Subscription),
+		Unregister: make(chan Subscription),
 	}
 	return &room
 }
@@ -70,8 +76,7 @@ func (r *Room) Start() {
 			r.RemoveSubscriber(s)
 		case m := <-r.Broadcast:
 			log.Println("Room is processing msg")
-			msg := r.EventHandler(m)
-			r.ProcessMsg(msg)
+			r.ProcessMsg(m)
 		case trigger := <-r.Active:
 			if !trigger {
 				log.Println("Trigger down")
@@ -79,14 +84,6 @@ func (r *Room) Start() {
 			}
 		}
 	}
-}
-
-func RegisterRoom(r *Room) {
-	H.Register <- r
-}
-
-func Unregister(r *Room) {
-	H.Unregister <- r
 }
 
 func (r *Room) Shutdown() {
@@ -102,10 +99,7 @@ func (r *Room) AddSubscriber(subscriber Subscription) {
 }
 
 func (r *Room) RemoveSubscriber(subscriber Subscription) {
-	if _, ok := r.Subs[subscriber.SubId]; ok {
-		subscriber.Conn.Close()
-		delete(r.Subs, subscriber.SubId)
-	}
+	delete(r.Subs, subscriber.SubId)
 }
 
 func (r *Room) CloseChannels() {
