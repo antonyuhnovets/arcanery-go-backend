@@ -26,3 +26,10 @@ func (p *Player) PlayCard(id string) {
 
 func (p *Player) ChangeCard(oldCard, newCard string) {
 }
+
+type PlayerService interface {
+	ChoseCards(...string)
+	PlayCard(string)
+	GetReady()
+	ChangeCard(string, string)
+}

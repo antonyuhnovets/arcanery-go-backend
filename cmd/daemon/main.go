@@ -9,6 +9,7 @@ import (
 
 func main() {
 	cfg, err := config.LoadConfig()
+	log.Println(cfg.HttpServer.Host)
 	if err != nil {
 		log.Fatal(err)
 	}

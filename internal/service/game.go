@@ -28,3 +28,8 @@ type Game struct {
 	Player1 *Player
 	Player2 *Player
 }
+type GameService interface {
+	StartGame()
+	EndRound()
+	EndGame()
+}

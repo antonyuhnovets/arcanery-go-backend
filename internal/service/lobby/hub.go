@@ -32,9 +32,9 @@ func (h *Hub) Run() {
 			log.Println("Hub is processing unregister")
 			h.RemoveRoom(r)
 		case msg := <-h.Broadcast:
-			h.HandleMsg(msg)
-			h.RedirectMsg(msg)
-			log.Println("Hub is processing msg")
+			m := h.HandleMsg(msg)
+			h.RedirectMsg(m)
+			// log.Println("Hub is processing msg")
 			// case e := <-h.Events:
 
 		}

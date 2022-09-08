@@ -6,18 +6,17 @@ import (
 	// "github.com/hetonei/arcanery-go-backend/internal/service"
 )
 
-func (h *Hub) HandleMsg(m Message) {
-	room := GetRoomById(m.Room)
+func (h *Hub) HandleMsg(m Message) Message {
+	// room := GetRoomById(m.Room)
 	switch m.Event {
 	case "connected":
 		id := m.PullData("uid")
 		m.Data = id
-
-		for k, sub := range room.Subs {
-			log.Println(k, " ", sub)
-		}
 	case "chat":
+		// data := m.PullData("text")
+		// m.Data = data
 	}
+	return m
 }
 
 func (m Message) PullData(data string) interface{} {
