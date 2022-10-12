@@ -8,9 +8,9 @@ import (
 )
 
 type Subscription struct {
-	SubId string
-	Room  string
-	Conn  service.Connection
+	Id   string
+	Room string
+	Conn service.Connection
 }
 
 func CreateSubscription(id, roomId string, conn service.Connection) Subscription {
@@ -93,13 +93,13 @@ func (r *Room) Shutdown() {
 }
 
 func (r *Room) AddSubscriber(subscriber Subscription) {
-	if _, ok := r.Subs[subscriber.SubId]; !ok {
-		r.Subs[subscriber.SubId] = subscriber
+	if _, ok := r.Subs[subscriber.Id]; !ok {
+		r.Subs[subscriber.Id] = subscriber
 	}
 }
 
 func (r *Room) RemoveSubscriber(subscriber Subscription) {
-	delete(r.Subs, subscriber.SubId)
+	delete(r.Subs, subscriber.Id)
 }
 
 func (r *Room) CloseChannels() {

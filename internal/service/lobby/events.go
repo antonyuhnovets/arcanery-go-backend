@@ -32,7 +32,7 @@ func GetAllSubscribersID(roomId string) []string {
 	var subsId []string
 	room := GetRoomById(roomId)
 	for _, sub := range room.Subs {
-		subsId = append(subsId, sub.SubId)
+		subsId = append(subsId, sub.Id)
 	}
 
 	return subsId

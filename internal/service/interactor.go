@@ -1,7 +1,11 @@
+// Represents abstract interfaces with buisness logic.
+
 package service
 
 import "context"
 
+// Interface for tunnel connetion (like websocket).
+// Controls msg exchange process (handshake).
 type Connection interface {
 	WritePump()
 	SendMsg(interface{})
@@ -11,12 +15,7 @@ type Connection interface {
 	Close()
 }
 
-type Services struct {
-	Ctx  context.Context
-	Room RoomService
-	Repo RepositoryService
-}
-
+// Interface for room managing.
 type RoomService interface {
 	CreateRoom(string)
 	ConnectToRoom(string)
@@ -24,6 +23,8 @@ type RoomService interface {
 	DeleteRoom(string)
 }
 
+// Abstract CRUD interface.
+// Saving, processing data in setted repository
 type RepositoryService interface {
 	Create(interface{}) error
 	ReadById(interface{}, int64) error
@@ -35,6 +36,14 @@ type RepositoryService interface {
 
 type ConnectionDB interface {
 	GetRepoService(string) RepositoryService
+}
+
+// Essence with main services.
+// Contain abstract interfaces with buisness logic.
+type Services struct {
+	Ctx  context.Context
+	Room RoomService
+	Repo RepositoryService
 }
 
 func (s *Services) SetRoomService(srv RoomService) {

@@ -45,12 +45,12 @@ func (rws RequestWS) ConnectToRoom(roomId string) {
 
 	conn := websocket.MakeConnection(ws)
 	newId := uuid.GenerateId()
-	s := lobby.CreateSubscription(newId, roomId, conn)
+	sub := lobby.CreateSubscription(newId, roomId, conn)
 
 	log.Printf("Subscribion %s created", newId)
 
-	s.Subscribe(s.SubId, room)
-	s.ListenWS(room)
+	sub.Subscribe(sub.Id, room)
+	sub.ListenWS(room)
 
 }
 
