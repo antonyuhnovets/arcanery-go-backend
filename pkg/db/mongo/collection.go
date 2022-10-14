@@ -1,3 +1,5 @@
+// Implementation of CRUD for collection in mongo
+
 package mongo
 
 import (
@@ -7,20 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MongoConnection struct {
-	db *mongo.Database
-}
-
 type MongoCollection struct {
 	coll *mongo.Collection
-}
-
-func (mg *MongoConnection) GetCollection(collectionName string) *MongoCollection {
-	collection := mg.db.Collection(collectionName)
-	coll := &MongoCollection{
-		coll: collection,
-	}
-	return coll
 }
 
 func (mc *MongoCollection) Create(doc interface{}, ctx context.Context) error {

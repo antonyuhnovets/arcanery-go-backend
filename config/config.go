@@ -16,8 +16,11 @@ type HttpServer struct {
 	Port string `env:"PORT" env-default:"8080"`
 }
 type Database struct {
-	Db  string `env:"DB" env-default:"mongo"`
-	Url string `env:"DB_URL"`
+	Db       string `env:"DB" env-default:"mongo"`
+	Name     string `env:"DB_NAME" env-default:"arcanery"`
+	Url      string `env:"DB_URL"`
+	Username string `env:"DB_USERNAME"`
+	Password string `env:"DB_PASSWORD"`
 }
 
 // Load config from enviroment

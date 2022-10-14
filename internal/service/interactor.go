@@ -4,8 +4,8 @@ package service
 
 import "context"
 
-// Interface for tunnel connetion (like websocket).
-// Controls msg exchange process (handshake).
+// Interface for tunnel connetion (like websocket)
+// Controls msg exchange process (handshake)
 type Connection interface {
 	WritePump()
 	SendMsg(interface{})
@@ -15,7 +15,7 @@ type Connection interface {
 	Close()
 }
 
-// Interface for room managing.
+// Interface for room manage
 type RoomService interface {
 	CreateRoom(string)
 	ConnectToRoom(string)
@@ -23,8 +23,8 @@ type RoomService interface {
 	DeleteRoom(string)
 }
 
-// Abstract CRUD interface.
-// Saving, processing data in setted repository
+// Abstract CRUD interface
+// Saving, processing data in repository
 type RepositoryService interface {
 	Create(interface{}) error
 	ReadById(interface{}, int64) error
@@ -34,12 +34,12 @@ type RepositoryService interface {
 	DeleteAll() (int64, error)
 }
 
-type ConnectionDB interface {
+type ConnectionRepo interface {
 	GetRepoService(string) RepositoryService
 }
 
-// Essence with main services.
-// Contain abstract interfaces with buisness logic.
+// Essence with main application services
+// Services is abstract interfaces with buisness logic
 type Services struct {
 	Ctx  context.Context
 	Room RoomService

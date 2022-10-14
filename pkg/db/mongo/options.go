@@ -1,29 +1,41 @@
+// Methods to set, get mongo connection options
+
 package mongo
 
-import (
-	"go.mongodb.org/mongo-driver/mongo/options"
-)
+import "go.mongodb.org/mongo-driver/mongo/options"
 
-type Option func(*MongoClient)
+type Options struct {
+	db    string             // db name
+	uri   string             // connection uri
+	creds options.Credential // authorisation creds
+}
 
-func ConnectionURI(uri string) Option {
-	return func(mc *MongoClient) {
-		mc.uri = uri
+// Set DB connection options
+func SetOptions(opts map[string]string) Options {
+	return Options{
+		db:    opts["name"],
+		uri:   opts["uri"],
+		creds: SetCreds(opts["username"], opts["password"]),
 	}
 }
 
-func Creds(name, pass string) Option {
-	return func(mc *MongoClient) {
-		mc.creds = options.Credential{
-			AuthSource: "admin",
-			Username:   name,
-			Password:   pass,
-		}
+// Set DB authorisation creds
+func SetCreds(username, pass string) options.Credential {
+	return options.Credential{
+		Username:   username,
+		Password:   pass,
+		AuthSource: "admin",
 	}
 }
 
-func Database(db string) Option {
-	return func(mc *MongoClient) {
-		mc.db = db
-	}
+func (o Options) GetDB() string {
+	return o.db
+}
+
+func (o Options) GetURI() string {
+	return o.uri
+}
+
+func (o Options) GetCreds() options.Credential {
+	return o.creds
 }

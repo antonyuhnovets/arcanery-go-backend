@@ -1,3 +1,6 @@
+// Package for mongo lib.
+// Contains tools for set up client, connect and communicate with db and collection.
+
 package mongo
 
 import (
@@ -9,35 +12,34 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Client with data, needed for connecting
 type MongoClient struct {
-	uri    string
-	db     string
-	creds  options.Credential
-	client *mongo.Client
+	Opts   Options
+	client *mongo.Client // client
 }
 
-func NewClient() *MongoClient {
-	mc := &MongoClient{}
+// New empty MongoClient struct
+func NewClient(opts Options) *MongoClient {
+	mc := &MongoClient{
+		Opts: opts,
+	}
+
 	return mc
 }
 
-func (mc *MongoClient) SetOptions(opts ...Option) {
-	for _, opt := range opts {
-		opt(mc)
-	}
-}
-
+// Add pointer of mongo client to struct
 func (mc *MongoClient) StartClient() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mc.uri).SetAuth(mc.creds))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mc.Opts.uri).SetAuth(mc.Opts.creds))
 	if err != nil {
 		return err
 	}
 	mc.client = client
+
 	return nil
 }
 
+// Get connection to database.
 func (mc *MongoClient) ConnectMongo(c context.Context) (*MongoConnection, error) {
-	// declare context and try to set client connection
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
@@ -49,25 +51,42 @@ func (mc *MongoClient) ConnectMongo(c context.Context) (*MongoConnection, error)
 	if err := mc.PingDB(ctx); err != nil {
 		return nil, err
 	}
-	conn := mc.ConnectDB()
 
-	// output
+	conn := mc.ConnectDB()
 	log.Println("Connected to MongoDB")
+
 	return conn, nil
 }
 
+// Ping the database
 func (mc *MongoClient) PingDB(ctx context.Context) error {
-	// ping the database
 	err := mc.client.Ping(ctx, nil)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
+// Connect to database by name
 func (mc *MongoClient) ConnectDB() *MongoConnection {
 	conn := &MongoConnection{
-		db: mc.client.Database(mc.db),
+		conn: mc.client.Database(mc.Opts.db),
 	}
+
 	return conn
+}
+
+// Connection to database
+type MongoConnection struct {
+	conn *mongo.Database
+}
+
+func (mc *MongoConnection) GetCollection(collectionName string) *MongoCollection {
+	collection := mc.conn.Collection(collectionName)
+	coll := &MongoCollection{
+		coll: collection,
+	}
+
+	return coll
 }

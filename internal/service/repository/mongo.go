@@ -1,3 +1,6 @@
+// Implementation of mongo repository.
+// Manage connecttion and CRUD methods.
+
 package repository
 
 import (
@@ -8,7 +11,6 @@ import (
 	"github.com/hetonei/arcanery-go-backend/pkg/db/mongo"
 )
 
-// Get the CRUD methods of collection
 type MongoRepository struct {
 	usecase string
 	ctx     context.Context
@@ -16,6 +18,7 @@ type MongoRepository struct {
 }
 
 type MongoConnection struct {
+	db   string
 	ctx  context.Context
 	conn *mongo.MongoConnection
 }
@@ -72,7 +75,11 @@ func (mc *MongoConnection) GetRepoService(collection string) service.RepositoryS
 	}
 }
 
-func GetConnection(ctx context.Context, mc *mongo.MongoClient) service.ConnectionDB {
+func GetConnectionMongo(ctx context.Context, opts map[string]string) *MongoConnection {
+	mc := &mongo.MongoClient{
+		Opts: mongo.SetOptions(opts),
+	}
+
 	if err := mc.StartClient(); err != nil {
 		log.Println(err)
 	}
@@ -80,7 +87,9 @@ func GetConnection(ctx context.Context, mc *mongo.MongoClient) service.Connectio
 	if err != nil {
 		log.Println(err)
 	}
+
 	return &MongoConnection{
+		db:   mc.Opts.GetDB(),
 		ctx:  ctx,
 		conn: conn,
 	}

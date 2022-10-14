@@ -8,12 +8,15 @@ import (
 	"github.com/hetonei/arcanery-go-backend/pkg/uuid"
 )
 
+// Get services with buisness logic.
 func GetServices(c *gin.Context) *service.Services {
 	s := service.Services{
 		Ctx: c,
 	}
 	srv := ws.RegisterRequest(c.Writer, c.Request)
+
 	s.SetRoomService(srv)
+
 	return &s
 }
 

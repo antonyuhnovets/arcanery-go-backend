@@ -8,10 +8,11 @@ import (
 )
 
 func main() {
+	// load config
 	cfg, err := config.LoadConfig()
-	log.Println(cfg.HttpServer.Host)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	app.Run(&cfg)
 }

@@ -1,8 +1,9 @@
+// Set up application before run
+
 package app
 
 import (
 	"fmt"
-	// "net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -22,15 +23,18 @@ import (
 func Run(cfg *config.Config) {
 	router := gin.New()
 
+	// run hub
 	go lobby.H.Run()
 
+	// swagger docs
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	router.LoadHTMLFiles("index.html")
-
+	// set routes
 	v1.NewRouter(router)
 
+	// use middlewares
 	router.Use(middleware.Cors())
 
+	// run on given host, port
 	router.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
 }

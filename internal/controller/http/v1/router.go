@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Router for room
 func NewRouter(router *gin.Engine) {
 	h := router.Group("v1/room")
 

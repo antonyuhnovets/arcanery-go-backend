@@ -1,3 +1,5 @@
+// Package manage websocket connection, handshake using gorilla lib.
+
 package websocket
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Options for websocket connection.
 const (
 	writeWait      = 10 * time.Second
 	pongWait       = 60 * time.Second
@@ -19,17 +22,18 @@ const (
 type Connection struct {
 	Id   string
 	ws   *websocket.Conn
-	send chan interface{} // Channel storing outcoming messages
+	send chan interface{} // channel storing outcoming messages
 }
 
-func MakeConnection(ws *websocket.Conn) Connection {
+func MakeConnection(ws *websocket.Conn) *Connection {
 	c := Connection{
 		send: make(chan interface{}),
 		ws:   ws,
 	}
-	return c
+	return &c
 }
 
+// Upgrades connection protocol to websocket
 func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	var upgrader = websocket.Upgrader{
 		ReadBufferSize:  maxMessageSize,
@@ -46,11 +50,12 @@ func UpgradeToWs(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error
 	return ws, nil
 }
 
-func (c Connection) SendMsg(msg interface{}) {
+func (c *Connection) SendMsg(msg interface{}) {
 	c.send <- msg
 }
 
-func (c Connection) ReadPump(msgHandler func([]byte)) {
+// Read message from websocket connection and handle it with passed function
+func (c *Connection) ReadPump(msgHandler func([]byte)) {
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -67,7 +72,10 @@ func (c Connection) ReadPump(msgHandler func([]byte)) {
 	}
 }
 
-func (c Connection) WritePump() {
+// Check if there is new outcoming message
+// Marshal it to bytes and pass to write function
+// Pass an empty msg if no msgs sended
+func (c *Connection) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -80,16 +88,16 @@ func (c Connection) WritePump() {
 				c.write(websocket.CloseMessage, []byte{})
 				return
 			}
-			// if err := c.writeJson(message); err != nil {
-			// 	return
-			// }
+
 			bMsg, err := json.Marshal(message)
 			if err != nil {
 				log.Println(err)
 			}
+
 			if err := c.write(websocket.TextMessage, bMsg); err != nil {
 				return
 			}
+
 		case <-ticker.C:
 			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
 				return
@@ -98,28 +106,22 @@ func (c Connection) WritePump() {
 	}
 }
 
-func (c Connection) Close() {
+func (c *Connection) Close() {
 	close(c.send)
 	c.ws.Close()
 }
 
-func (c Connection) SetConnectionId(id string) {
+func (c *Connection) SetConnectionId(id string) {
 	c.Id = id
 }
 
-func (c Connection) GetConnectionId() string {
+func (c *Connection) GetConnectionId() string {
 	return c.Id
 }
 
-// write writes a message with the given message type and payload.
+// Writes a message with the given message type and payload
 func (c *Connection) write(mt int, payload []byte) error {
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 
 	return c.ws.WriteMessage(mt, payload)
 }
-
-// func (c *Connection) writeJson(msg Message) error {
-// 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-
-// 	return c.ws.WriteJSON(msg)
-// }

@@ -1,20 +1,23 @@
+// Room managing with websocket.
+
 package ws
 
 import (
 	"log"
 	"net/http"
 
-	// "github.com/hetonei/arcanery-go-backend/internal/service"
 	"github.com/hetonei/arcanery-go-backend/internal/service/lobby"
 	"github.com/hetonei/arcanery-go-backend/pkg/uuid"
 	"github.com/hetonei/arcanery-go-backend/pkg/websocket"
 )
 
+// Request on websocket room
 type RequestWS struct {
 	writer  http.ResponseWriter
 	request *http.Request
 }
 
+// Get http request and add writer for ws
 func RegisterRequest(w http.ResponseWriter, r *http.Request) RequestWS {
 	rws := RequestWS{
 		writer:  w,
@@ -29,6 +32,7 @@ func (rws RequestWS) CreateRoom(roomId string) {
 	lobby.RegisterRoom(room)
 }
 
+// Connect to room by id, upgrade connection protocol to websocket
 func (rws RequestWS) ConnectToRoom(roomId string) {
 	room := lobby.GetRoomById(roomId)
 	if room == nil {
@@ -43,13 +47,14 @@ func (rws RequestWS) ConnectToRoom(roomId string) {
 		return
 	}
 
+	// Make subscription and send on register
 	conn := websocket.MakeConnection(ws)
 	newId := uuid.GenerateId()
 	sub := lobby.CreateSubscription(newId, roomId, conn)
 
 	log.Printf("Subscribion %s created", newId)
 
-	sub.Subscribe(sub.Id, room)
+	sub.Subscribe(room)
 	sub.ListenWS(room)
 
 }
@@ -70,8 +75,10 @@ func (rws RequestWS) Disconnect(roomId string) {
 	sub.Unsubscribe(room)
 }
 
+// Send room unregister request to hub
 func (rws RequestWS) DeleteRoom(roomId string) {
 	room := lobby.GetRoomById(roomId)
 	lobby.Unregister(room)
+
 	log.Printf("request to unregister room %s from hub sent", roomId)
 }
