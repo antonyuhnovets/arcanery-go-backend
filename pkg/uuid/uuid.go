@@ -1,3 +1,5 @@
+// Package for random id generation.
+
 package uuid
 
 import (

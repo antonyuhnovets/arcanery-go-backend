@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/hetonei/arcanery-go-backend/internal/service"
 	"github.com/hetonei/arcanery-go-backend/internal/service/lobby"
 	"github.com/hetonei/arcanery-go-backend/pkg/uuid"
 	"github.com/hetonei/arcanery-go-backend/pkg/websocket"
@@ -18,7 +19,7 @@ type RequestWS struct {
 }
 
 // Get http request and add writer for ws
-func RegisterRequest(w http.ResponseWriter, r *http.Request) RequestWS {
+func RegisterRequest(w http.ResponseWriter, r *http.Request) service.RoomService {
 	rws := RequestWS{
 		writer:  w,
 		request: r,

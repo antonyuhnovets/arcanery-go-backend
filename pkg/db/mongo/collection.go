@@ -15,6 +15,7 @@ type MongoCollection struct {
 
 func (mc *MongoCollection) Create(doc interface{}, ctx context.Context) error {
 	_, err := mc.coll.InsertOne(ctx, doc)
+
 	return err
 }
 
@@ -27,20 +28,24 @@ func (mc *MongoCollection) ReadAll(doc interface{}, ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	return cursor.All(ctx, doc)
 }
 
 func (mc *MongoCollection) UpdateById(doc interface{}, ctx context.Context, filter int64) error {
 	_, err := mc.coll.UpdateOne(ctx, bson.M{"_id": filter}, bson.M{"$set": doc})
+
 	return err
 }
 
 func (mc *MongoCollection) DeleteById(ctx context.Context, filter int64) error {
 	_, err := mc.coll.DeleteOne(ctx, bson.M{"_id": filter})
+
 	return err
 }
 
 func (mc *MongoCollection) DeleteAll(ctx context.Context) (int64, error) {
 	result, err := mc.coll.DeleteMany(ctx, bson.M{})
+
 	return result.DeletedCount, err
 }

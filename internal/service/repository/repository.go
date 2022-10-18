@@ -1,3 +1,5 @@
+// Get connection to repository according to config.
+
 package repository
 
 import (
