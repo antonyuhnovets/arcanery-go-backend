@@ -9,6 +9,7 @@ import (
 type Config struct {
 	HttpServer
 	Database
+	Logger
 }
 
 type HttpServer struct {
@@ -21,6 +22,11 @@ type Database struct {
 	Url      string `env:"DB_URL"`
 	Username string `env:"DB_USERNAME"`
 	Password string `env:"DB_PASSWORD"`
+}
+
+type Logger struct {
+	Log string `env:"LOG" env-default:"sentry"`
+	Url string `env:"LOG_URL"`
 }
 
 // Load config from enviroment

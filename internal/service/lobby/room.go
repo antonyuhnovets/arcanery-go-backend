@@ -6,8 +6,6 @@ package lobby
 import (
 	"encoding/json"
 	"log"
-
-	"github.com/hetonei/arcanery-go-backend/internal/service"
 )
 
 type Room struct {
@@ -21,9 +19,10 @@ type Room struct {
 
 // Subscriber on room
 type Subscription struct {
-	Id   string             // subscriber id
-	Room string             // room id
-	Conn service.Connection // connection interface
+	Id     string // subscriber id
+	RoomId string // room id
+	Room   *Room
+	Conn   Connection // connection interface
 }
 
 func CreateRoom(roomId string) *Room {
@@ -35,31 +34,30 @@ func CreateRoom(roomId string) *Room {
 		Register:   make(chan Subscription),
 		Unregister: make(chan Subscription),
 	}
+
 	return &room
 }
 
 // Make subscription of given id and connections
-func CreateSubscription(id, roomId string, conn service.Connection) Subscription {
-	return Subscription{id, roomId, conn}
-}
-
-func GetRoomById(roomId string) *Room {
-	room := CheckRoomRequest(roomId)
-	if room != nil {
-		log.Printf("%s in hub", roomId)
-		return room
+func (r *Room) CreateSubscription(id string, conn interface{}) *Subscription {
+	i, ok := conn.(Connection)
+	if !ok {
+		log.Println("No connection to subscribe")
+		return nil
 	}
-
-	log.Printf("%s not in hub", roomId)
-	return nil
+	return &Subscription{
+		Id:     id,
+		RoomId: r.Id,
+		Room:   r,
+		Conn:   i,
+	}
 }
 
-func GetClientById(roomId, clientId string) *Subscription {
-	room := GetRoomById(roomId)
-	if sub, ok := room.Subs[roomId]; ok {
+func (r *Room) GetClientById(clientId string) *Subscription {
+	if sub, ok := r.Subs[r.Id]; ok {
 		return &sub
 	}
-
+	log.Println("Subscriber not found")
 	return nil
 }
 
@@ -69,15 +67,15 @@ func (r *Room) Start() {
 	for {
 		select {
 		case s := <-r.Register: // new subscription request
-			log.Println("Room is processing register")
+			log.Printf("Room %s is processing register sub %s", s.RoomId, s.Id)
 			r.AddSubscriber(s)
 
 		case s := <-r.Unregister: // unsubscribe request
-			log.Println("Room is processing unregister")
+			log.Printf("Room %s is processing unregister sub %s", s.RoomId, s.Id)
 			r.RemoveSubscriber(s)
 
 		case m := <-r.Broadcast: // new message to broadcast
-			log.Println("Room is processing msg")
+			log.Printf("Room %s is processing msg", m.Room)
 			r.ProcessMsg(m)
 
 		case trigger := <-r.Active: // close room request
@@ -101,6 +99,7 @@ func (r *Room) Shutdown() {
 func (r *Room) AddSubscriber(subscriber Subscription) {
 	if _, ok := r.Subs[subscriber.Id]; !ok {
 		r.Subs[subscriber.Id] = subscriber
+		log.Printf("Subscriber %s registred", subscriber.Id)
 	}
 }
 
@@ -113,6 +112,7 @@ func (r *Room) CloseChannels() {
 	close(r.Broadcast)
 	close(r.Register)
 	close(r.Unregister)
+
 	log.Println("All channels closed")
 }
 
@@ -124,12 +124,25 @@ func (r *Room) RemoveAllSubscribers() {
 	}
 }
 
+func (r *Room) GetAllSubscribers() map[string]interface{} {
+	l := make(map[string]interface{})
+	for key, sub := range r.Subs {
+		l[key] = sub
+	}
+
+	return l
+}
+
 // Redirect message to all room subscribers
 func (r *Room) ProcessMsg(msg Message) {
 	for _, sub := range r.Subs {
 		sub.Conn.SendMsg(msg)
-		log.Println("Msg was redirected to connections")
 	}
+	log.Println("Msg was redirected to connections")
+}
+
+func (r *Room) GetRoomInfo() *Room {
+	return r
 }
 
 // Accept message, parse it and redirect to hub
@@ -137,22 +150,18 @@ func (s Subscription) HandleMsg(msg []byte) {
 	incMsg := &Message{}
 	err := json.Unmarshal(msg, incMsg)
 
-	incMsg.Room = s.Room
+	incMsg.Room = s.RoomId
 	if err != nil {
 		log.Println(err)
 	}
 
-	H.Broadcast <- *incMsg
+	s.Room.Broadcast <- *incMsg
 }
 
-func (s Subscription) Subscribe(room *Room) {
-	room.Register <- s
-}
+func (s Subscription) Subscribe(r *Room) {
+	r.Register <- s
 
-// Start listening to websocket and message exchange
-func (s Subscription) ListenWS(room *Room) {
-	go s.Conn.WritePump()
-	go s.Conn.ReadPump(s.HandleMsg)
+	s.Conn.Listen(s.HandleMsg)
 }
 
 func (s Subscription) Unsubscribe(room *Room) {

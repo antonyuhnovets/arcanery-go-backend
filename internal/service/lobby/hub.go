@@ -25,6 +25,15 @@ var H = &Hub{
 	Rooms:      make(map[string]*Room),
 }
 
+func NewHub() *Hub {
+	return &Hub{
+		Broadcast:  make(chan Message),
+		Register:   make(chan *Room),
+		Unregister: make(chan *Room),
+		Rooms:      make(map[string]*Room),
+	}
+}
+
 // Start process events by hub
 func (h *Hub) Run() {
 	for {
@@ -38,20 +47,25 @@ func (h *Hub) Run() {
 			h.RemoveRoom(r)
 
 		case msg := <-h.Broadcast: // incoming message/event
-			m := h.HandleMsg(msg)
-			h.RedirectMsg(m)
+			// (msg)HandleEvent()
+			h.RedirectMsg(msg)
+
 		}
 	}
 }
 
 // Send room registration request to hub
-func RegisterRoom(r *Room) {
-	H.Register <- r
+func (h *Hub) RegisterRoom(r *Room) {
+	h.Register <- r
 }
 
 // Send room unregister request to hub
-func Unregister(r *Room) {
-	H.Unregister <- r
+func (h *Hub) UnregisterRoom(r *Room) {
+	h.Unregister <- r
+}
+
+func (h *Hub) SendMessage(msg Message) {
+	h.Broadcast <- msg
 }
 
 // Add room to hub, run gorutine
@@ -81,18 +95,30 @@ func (h *Hub) RedirectMsg(msg Message) {
 // Check if room exist in hub
 func (h *Hub) CheckRoomInHub(roomId string) bool {
 	if _, ok := h.Rooms[roomId]; ok {
-		log.Println(true)
 		return true
 	}
+
 	return false
 }
 
 // Check if requested room in hub by id
-func CheckRoomRequest(roomId string) *Room {
-	if !H.CheckRoomInHub(roomId) {
+func (h *Hub) CheckRoomRequest(roomId string) *Room {
+	if !h.CheckRoomInHub(roomId) {
 		log.Printf("%s room not in hub", roomId)
+
 		return nil
 	}
 	log.Printf("%s room in hub", roomId)
-	return H.Rooms[roomId]
+
+	return h.Rooms[roomId]
+}
+
+func (h *Hub) GetRoomById(roomId string) *Room {
+	room := h.CheckRoomRequest(roomId)
+	if room != nil {
+		return room
+	}
+
+	log.Printf("%s not in hub", roomId)
+	return nil
 }

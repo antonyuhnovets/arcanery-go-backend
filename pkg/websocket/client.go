@@ -30,6 +30,7 @@ func MakeConnection(ws *websocket.Conn) *Connection {
 		send: make(chan interface{}),
 		ws:   ws,
 	}
+
 	return &c
 }
 
@@ -124,4 +125,9 @@ func (c *Connection) write(mt int, payload []byte) error {
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 
 	return c.ws.WriteMessage(mt, payload)
+}
+
+func (c *Connection) Listen(handler func([]byte)) {
+	go c.ReadPump(handler)
+	go c.WritePump()
 }

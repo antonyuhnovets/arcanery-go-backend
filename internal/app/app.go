@@ -4,7 +4,10 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -21,20 +24,59 @@ import (
 // @description   Give me request and I'll give you a power
 // @license.name  MIT
 func Run(cfg *config.Config) {
-	router := gin.New()
+	app := gin.New()
 
 	// run hub
-	go lobby.H.Run()
+	h := lobby.NewHub()
+	go h.Run()
+
+	m := map[string]string{
+		"open":   "OnConnect",
+		"chat":   "OnMessage",
+		"create": "OnCreate",
+		"close":  "OnDisconnect",
+	}
+	eventHub := lobby.NewEventHub(h, m)
+
+	go eventHub.Run()
 
 	// swagger docs
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// set routes
-	v1.NewRouter(router)
+	v1.NewRouter(app, eventHub)
 
 	// use middlewares
-	router.Use(middleware.Cors())
+	app.Use(middleware.Cors())
+
+	// sentry
+	app.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true,
+	}))
+
+	app.Use(func(ctx *gin.Context) {
+		if hub := sentrygin.GetHubFromContext(ctx); hub != nil {
+			hub.Scope().SetTag("someRandomTag", "maybeYouNeedIt")
+		}
+		ctx.Next()
+	})
+
+	app.GET("/", func(ctx *gin.Context) {
+		if hub := sentrygin.GetHubFromContext(ctx); hub != nil {
+			hub.WithScope(func(scope *sentry.Scope) {
+				scope.SetExtra("unwantedQuery", "someQueryDataMaybe")
+				hub.CaptureMessage("User provided unwanted query string, but we recovered just fine")
+			})
+		}
+		ctx.Status(http.StatusOK)
+	})
+
+	app.GET("/foo", func(ctx *gin.Context) {
+		// sentrygin handler will catch it just fine. Also, because we attached "someRandomTag"
+		// in the middleware before, it will be sent through as well
+		panic("y tho")
+	})
 
 	// run on given host, port
-	router.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
+	app.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
 }
